@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Weather Forecast App{% endblock %}
+
+{% block content %}
+<div style="max-width: 31rem; margin: 0 auto;">
+    <h2>User Profile</h2>
+    <div id="profile-container">
+        <p>Loading profile information...</p>
+    </div>
+    
+    <div id="upgrade-container" style="margin-top: 1.5rem; display: none;">
+        <h3>Upgrade to Premium</h3>
+        <p>As a premium user you will get access to your query history.</p>
+        <button id="upgrade-btn" class="btn" style="background-color: #FBBC05;">Upgrade to Premium</button>
+    </div>
+
+    <div id="request-stats" style="margin-top: 1.5rem;">
+        <h3>Perks</h3>
+        <div id="stats-container">
+            <p></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!isAuthenticated()) {
+            document.getElementById('profile-container').innerHTML = 
+                '<p>Please <a href="/login/">login</a> to view your profile.</p>';
+            document.getElementById('stats-container').innerHTML = '';
+            return;
+        }
+        
+        // Fetch user profile
+        apiRequest('/api/auth/profile/')
+            .then(data => {
+                const profileContainer = document.getElementById('profile-container');
+                profileContainer.innerHTML = `
+                    <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 0.06rem 0.12rem rgba(0,0,0,0.1);">
+                        <p><strong>Username:</strong> ${data.username}</p>
+                        <p><strong>Email:</strong> ${data.email}</p>
+                        <p><strong>Account Type:</strong> ${data.is_premium ? 'Premium' : 'Standard'}</p>
+                    </div>
+                `;
+                
+                // Show upgrade button for non-premium users
+                if (!data.is_premium) {
+                    document.getElementById('upgrade-container').style.display = 'block';
+                }
+                
+                // Show request statistics
+                const statsContainer = document.getElementById('stats-container');
+                if (data.is_premium) {
+                    statsContainer.innerHTML = `
+                        <div style="background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 0.06rem 0.12rem rgba(0,0,0,0.1);">
+                            <p>You have access to your query history as a premium user.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                showMessage('Error loading profile: ' + error.message, true);
+                console.error('Error:', error);
+            });
+            
+        // Handle upgrade button click
+        document.getElementById('upgrade-btn').addEventListener('click', function() {
+            apiRequest('/api/auth/upgrade/', 'POST')
+                .then(data => {
+                    showMessage(data.message, false);
+                    // Reload the page to reflect changes
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                })
+                .catch(error => {
+                    showMessage('Error upgrading account: ' + error.message, true);
+                    console.error('Error:', error);
+                });
+        });
+    });
+</script>
+{% endblock %}

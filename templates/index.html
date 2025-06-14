@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Weather Forecast App{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 3.1rem 0;">
+    <h2>Welcome to the Weather Forecast App</h2>
+    <p>This simple application allows you to view and create weather forecasts.</p>
+    
+    <div style="margin-top: 2rem;">
+        <a href="/login/" class="btn">Login</a>
+        <a href="/register/" class="btn" style="margin-left: 0.62rem;">Register</a>
+    </div>
+    
+    <div style="margin-top: 1.25rem;">
+        <a href="/forecasts/" class="btn" style="background-color: #FBBC05;">View Forecasts</a>
+    </div>
+</div>
+{% endblock %}

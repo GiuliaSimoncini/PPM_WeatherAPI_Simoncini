@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Weather Forecast App{% endblock %}
+
+{% block content %}
+<div style="max-width: 31rem; margin: 0 auto;">
+    <h2>Register</h2>
+    <form id="register-form">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+            <label for="password2">Confirm Password</label>
+            <input type="password" id="password2" name="password2" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="form-group">
+            <label for="is_premium" class="checkbox-label">
+                <input type="checkbox" id="is_premium" name="is_premium">
+                Register as Premium User
+            </label>
+            <p class="form-help">Premium users get access to query history.</p>
+        </div>
+        <button type="submit" class="btn">Register</button>
+    </form>
+    <p>Already have an account? <a href="/login/">Login here</a></p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const password2 = document.getElementById('password2').value;
+        const isPremium = document.getElementById('is_premium').checked;
+        
+        // Check if passwords match
+        if (password !== password2) {
+            showMessage('Passwords do not match!', true);
+            return;
+        }
+        
+        // Use fetch directly here since we're not using the token yet
+        fetch('/api/auth/register/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                password: password,
+                password2: password2,
+                is_premium: isPremium
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(JSON.stringify(data));
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Show success message
+            showMessage('Registration successful! Please login.', false);
+            
+            // Redirect to login page
+            setTimeout(() => {
+                window.location.href = '/login/';
+            }, 2000);
+        })
+        .catch(error => {
+            try {
+                const errorData = JSON.parse(error.message);
+                let errorMessage = 'Registration failed: ';
+                
+                // Format error messages
+                for (const key in errorData) {
+                    if (Array.isArray(errorData[key])) {
+                        errorMessage += `${key}: ${errorData[key].join(', ')} `;
+                    } else {
+                        errorMessage += `${key}: ${errorData[key]} `;
+                    }
+                }
+                
+                showMessage(errorMessage, true);
+            } catch (e) {
+                showMessage('Registration failed. Please try again.', true);
+            }
+            console.error('Error:', error);
+        });
+    });
+</script>
+{% endblock %}

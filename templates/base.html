@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Weather Forecast App{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            color: #202124; /* Google's primary text color */
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 1.25rem;
+        }
+        header {
+            background: #4285F4; /* Google Blue */
+            color: white;
+            padding: 1.25rem 0;
+            margin-bottom: 1.25rem;
+        }
+        header .container nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            margin: 0;
+        }
+        header .nav-links a,
+        header .user-info a,
+        header .user-info span {
+            color: #202124; /* Change text color for readability */
+            background-color: white; /* Add white background */
+            text-decoration: none;
+            margin-left: 1rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s;
+            display: inline-block; /* Ensure padding works */
+        }
+        header .nav-links a:hover,
+        header .user-info a:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* Subtle hover effect */
+        }
+        header .user-info span {
+             /* Style for the welcome message */
+             font-weight: 500;
+        }
+        .btn {
+            display: inline-block;
+            background: #4285F4; /* Google Blue */
+            color: white;
+            padding: 0.7rem 1.4rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background: #357ae8; /* Darker Google Blue */
+        }
+        form {
+            background-color: white;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.06rem 0.12rem rgba(0,0,0,0.1);
+            max-width: 31rem;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 0.06rem solid #ddd;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+        }
+        
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+        
+        .form-help {
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+        input[type='text'], input[type='email'], input[type='password'], select, textarea {
+            width: 100%;
+            padding: 0.25rem;
+            margin-bottom: 0.5rem;
+            border: 0.06rem solid #ddd;
+            border-radius: 0.31rem;
+        }
+        .alert {
+            padding: 0.62rem;
+            background: #EA4335; /* Google Red */
+            color: white;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+        .success {
+            background: #34A853; /* Google Green */
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.25rem;
+        }
+        table, th, td {
+            border: 0.06rem solid #ddd;
+        }
+        th, td {
+            padding: 0.62rem;
+            text-align: left;
+        }
+        th {
+            background-color: #4285F4; /* Google Blue */
+            color: white;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <h1>Weather Forecast App</h1>
+                <div class="nav-links">
+                    <a href="/">Home</a>
+                    <a href="/forecasts/">Forecasts</a>
+                    <a href="/profile/" id="profile-link" style="display: none;">Profile</a>
+                    <a href="/query-history/" id="history-link" style="display: none;">Query History</a>
+                </div>
+                <div class="user-info" id="user-nav">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </nav>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div id="message-container"></div>
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Include utility JavaScript -->
+    <script src="/static/js/utils.js"></script>
+    
+    <!-- User authentication status script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userNav = document.getElementById('user-nav');
+            const profileLink = document.getElementById('profile-link');
+            const historyLink = document.getElementById('history-link');
+            
+            if (isAuthenticated()) {
+                const username = getUsername();
+                userNav.innerHTML = `
+                    <span>Welcome, ${username}</span>
+                    <a href="#" id="logout-btn" class="btn">Logout</a>
+                `;
+                
+                // Show profile link for all authenticated users
+                profileLink.style.display = 'inline-block';
+                
+                // Check if user is premium to show query history link
+                fetch('/api/auth/profile/', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_premium) {
+                        historyLink.style.display = 'inline-block';
+                        localStorage.setItem('is_premium', 'true');
+                    } else {
+                        localStorage.setItem('is_premium', 'false');
+                    }
+                })
+                .catch(error => console.error('Error fetching user profile:', error));
+                
+                // Add logout functionality
+                document.getElementById('logout-btn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+            } else {
+                userNav.innerHTML = `
+                    <a href="/login/" class="btn">Login</a>
+                    <a href="/register/" class="btn">Register</a>
+                `;
+                
+                // Hide profile and history links for non-authenticated users
+                profileLink.style.display = 'none';
+                historyLink.style.display = 'none';
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

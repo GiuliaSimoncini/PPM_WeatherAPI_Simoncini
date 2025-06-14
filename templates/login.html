@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Weather Forecast App{% endblock %}
+
+{% block content %}
+<div style="max-width: 31rem; margin: 0 auto;">
+    <h2>Login</h2>
+    <form id="login-form">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required style="max-width: 100%; box-sizing: border-box;">
+        </div>
+        <button type="submit" class="btn">Login</button>
+    </form>
+    <p>Don't have an account? <a href="/register/">Register here</a></p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Use fetch directly here since we're not using the token yet
+        fetch('/api/auth/token/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Login failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Store token in localStorage
+            localStorage.setItem('token', data.access);
+            localStorage.setItem('username', username);
+            
+            // Show success message
+            showMessage('Login successful! Redirecting...', false);
+            
+            // Redirect to forecasts page
+            setTimeout(() => {
+                window.location.href = '/forecasts/';
+            }, 1500);
+        })
+        .catch(error => {
+            showMessage('Login failed. Please check your credentials.', true);
+            console.error('Error:', error);
+        });
+    });
+</script>
+{% endblock %}

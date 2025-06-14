@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+
+{% block title %}Forecasts - Weather Forecast App{% endblock %}
+
+{% block content %}
+<style>
+    /* Table container with horizontal scroll for small screens */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 1.25rem;
+    }
+
+    .forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0; /* Margin handled by container */
+        min-width: 50rem; /* Ensures table doesn't shrink too much */
+    }
+
+
+    #forecasts-container {
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    #forecasts-table-container {
+        min-width: 37.5rem;
+        max-width: 100%;
+        overflow-x: auto;
+        box-sizing: border-box;
+    }
+
+    .filter-buttons,
+    .filter-by-user {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-by-user input {
+        max-width: 12.5rem;
+    }
+
+    .message-container {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+
+    .forecast-table th, .forecast-table td {
+        border: 0.06rem solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+        white-space: nowrap; /* Prevents text wrapping */
+    }
+
+    .forecast-table th {
+        background-color: #f2f2f2;
+        position: sticky;
+        top: 0;
+    }
+
+    .forecast-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .forecast-table tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .delete-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
+        padding: 0.31rem 0.62rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .delete-btn:hover {
+        background-color: #d32f2f;
+    }
+
+    .alert-btn-on {
+        background-color: #ff9800;
+        color: white;
+        border: none;
+        padding: 0.31rem 0.62rem;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 0.12rem;
+        cursor: pointer;
+        border-radius: 0.25rem;
+    }
+
+    .alert-btn-off {
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        padding: 0.31rem 0.62rem;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 0.12rem;
+        cursor: pointer;
+        border-radius: 0.25rem;
+    }
+
+    /* Slider indicators for mobile */
+    .scroll-indicator {
+        display: none;
+        text-align: center;
+        margin-bottom: 0.62rem;
+        color: #5F6368; /* Google gray text color */
+        font-size: 0.8rem;
+    }
+
+    /* Only show scroll indicator on small screens */
+    @media (max-width: 768px) {
+        .scroll-indicator {
+            display: block;
+        }
+    }
+</style>
+
+<div>
+    <h2>Weather Forecasts</h2>
+    
+    <div id="request-limit-info" class="alert alert-info" style="display: none; margin-bottom: 1rem;">
+        <p>As a standard user, you do not have access to your query history</p>
+        <p id="requests-count"></p>
+        <p><a href="/profile/">Upgrade to premium</a> to see your query history!</p>
+    </div>
+
+    <!-- Forecasts Table -->
+    <div id="forecasts-container">
+        <h3>Current Forecasts</h3>
+        <div class="scroll-indicator">
+            <i>← Swipe horizontally to view all data →</i>
+        </div>
+        <div class="table-responsive">
+            <div id="forecasts-table-container">
+                <!-- Forecasts table will be loaded here -->
+            </div>
+
+            <div class="filter-buttons">
+                <button id="all-forecasts-btn">All Forecasts</button>
+                <button id="my-forecasts-btn">My Forecasts</button>
+            </div>
+
+            <div class="filter-by-user">
+                <label for="username-filter">Filter by Username:</label>
+                <input type="text" id="username-filter" placeholder="Enter username">
+                <button id="filter-user-btn">Filter</button>
+            </div>
+
+            <div id="message-container" class="message-container"></div>
+        </div>
+    </div>
+
+
+    <!-- Create Forecast Form -->
+    <div style="margin-top: 2rem;">
+        <h3>Create New Forecast</h3>
+        <form id="create-forecast-form" style="max-width: 100%">
+            <h4>Location</h4>
+            <div>
+                <label for="region">Region:</label>
+                <input type="text" id="region" name="region" required style="max-width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="country">Country:</label>
+                <input type="text" id="country" name="country" required
+                       style="max-width: 100%; box-sizing: border-box;">
+            </div>
+
+            <h4>Weather Condition</h4>
+            <div>
+                <label for="condition">Condition:</label>
+                <select id="condition" name="condition" required style="max-width: 100%; box-sizing: border-box;">
+                    <option value="sunny">Sunny</option>
+                    <option value="windy">Windy</option>
+                    <option value="rainy">Rainy</option>
+                    <option value="cloudy">Cloudy</option>
+                </select>
+            </div>
+            <div>
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" name="temperature" step="0.01" required
+                       style="max-width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="humidity">Humidity (%):</label>
+                <input type="number" id="humidity" name="humidity" step="0.01" required
+                       style="max-width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="wind_speed">Wind Speed (km/h):</label>
+                <input type="number" id="wind_speed" name="wind_speed" step="0.01" required
+                       style="max-width: 100%; box-sizing: border-box;">
+            </div>
+            <div>
+                <label for="air_quality">Air Quality Index:</label>
+                <input type="number" id="air_quality" name="air_quality"
+                       style="max-width: 100%; box-sizing: border-box;" step="0.01" required>
+            </div>
+
+            <div>
+                <label for="weather_alert">
+                    <input type="checkbox" id="weather_alert" name="weather_alert">
+                    Weather Alert
+                </label>
+            </div>
+
+            <button type="submit" class="btn">Create Forecast</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to delete a forecast
+    function deleteForecast(forecastId) {
+        if (!confirm('Are you sure you want to delete this forecast?')) {
+            return;
+        }
+
+        apiRequest(`/api/weather_forecast/forecasts/delete/${forecastId}/`, 'DELETE')
+            .then(data => {
+                showMessage('Forecast deleted successfully!', false);
+                loadForecasts(); // Reload the forecasts to update the table
+            })
+            .catch(error => {
+                try {
+                    const errorObj = JSON.parse(error.message);
+                    showMessage(errorObj.error || 'Error deleting forecast', true);
+                } catch (e) {
+                    showMessage('Error deleting forecast', true);
+                }
+                console.error('Error:', error);
+            });
+    }
+
+    // Function to toggle weather alert status
+    function toggleWeatherAlert(forecastId) {
+        apiRequest(`/api/weather_forecast/forecasts/toggle-alert/${forecastId}/`, 'PATCH')
+            .then(data => {
+                showMessage(`Weather alert ${data.weather_alert ? 'enabled' : 'disabled'} successfully!`, false);
+                loadForecasts(); // Reload the forecasts to update the UI
+            })
+            .catch(error => {
+                showMessage(error.message, true);
+                console.error('Error:', error);
+            });
+    }
+
+    // Check if user is logged in
+    document.addEventListener('DOMContentLoaded', function () {
+            const requestLimitInfo = document.getElementById('request-limit-info');
+            const requestsCount = document.getElementById('requests-count');
+            const anonymousRequestLimitInfo = document.getElementById('anonymous-request-limit-info');
+            const anonymousRequestsCount = document.getElementById('anonymous-requests-count');
+            
+            if (!isAuthenticated()) {
+                // Hide filter buttons if not authenticated
+                document.querySelector('.filter-buttons').style.display = 'none';
+                requestLimitInfo.style.display = 'none'; // Hide authenticated user limit info
+
+                // Fetch anonymous request limit on page load
+                fetch('/api/weather_forecast/forecasts/create/', {
+                    method: 'OPTIONS'
+                }).then(response => {
+                    const anonymousRequestsRemaining = response.headers.get('X-Anonymous-Requests-Remaining');
+                    if (anonymousRequestsRemaining !== null) {
+                        anonymousRequestLimitInfo.style.display = 'block';
+                        anonymousRequestsCount.textContent = `Forecast creations remaining: ${anonymousRequestsRemaining}/10`;
+                        if (parseInt(anonymousRequestsRemaining) <= 0) {
+                            document.getElementById('create-forecast-form').innerHTML = `
+                                <div class="alert alert-warning">
+                                    <p><strong>Daily limit reached!</strong> As an anonymous user, you have used all your 10 daily forecast creations.</p>
+                                    <p>Please <a href="/register/">register</a> or try again tomorrow.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                }).catch(error => console.error('Error fetching anonymous request limit:', error));
+
+                return; // Exit if not authenticated, as authenticated user logic follows
+            }
+            
+            // Check if user is premium and show request limit info for non-premium users
+            apiRequest('/api/auth/profile/')
+                .then(data => {
+                    if (!data.is_premium) {
+                        requestLimitInfo.style.display = 'block';
+                    }                
+                })
+                .catch(error => {
+                    console.error('Error fetching user profile:', error);
+                });
+
+        // Load forecasts (default to all)
+        loadForecasts();
+
+        // Add event listeners to filter buttons
+        document.getElementById('all-forecasts-btn').addEventListener('click', function () {
+            loadForecasts(); // Load all forecasts
+        });
+
+        document.getElementById('my-forecasts-btn').addEventListener('click', function () {
+            const currentUser = getUsername();
+            if (currentUser) {
+                loadForecasts(currentUser); // Load forecasts for the current user
+            } else {
+                showMessage('Could not get current username.', true);
+            }
+        });
+
+        // Add event listener for the new filter button
+        document.getElementById('filter-user-btn').addEventListener('click', function () {
+            const username = document.getElementById('username-filter').value;
+            if (username) {
+                loadForecasts(username);
+            } else {
+                // If input is empty, maybe load all forecasts or show a message
+                loadForecasts(); // Load all forecasts if input is empty
+                showMessage('Loading all forecasts.', false);
+            }
+        });
+    });
+
+    // Function to load forecasts
+    function loadForecasts(filterUser = null) {
+        let url = '/api/weather_forecast/forecasts/';
+        if (filterUser) {
+            url += `?user=${filterUser}`;
+        }
+        apiRequest(url)
+            .then(data => {
+                displayForecasts(data);
+            })
+            .catch(error => {
+                showMessage(error.message, true);
+                console.error('Error:', error);
+            });
+    }
+
+    // Function to display forecasts in a table
+    function displayForecasts(forecasts) {
+        if (forecasts.length === 0) {
+            document.getElementById('forecasts-table-container').innerHTML =
+                '<p>No forecasts available. Create one below!</p>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'forecast-table';
+
+        // Create table header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        const headers = ['Region', 'Country', 'Condition', 'Temperature', 'Humidity', 'Wind Speed', 'Air Quality', 'Date', 'Alert', 'Created By', 'Actions'];
+
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.textContent = headerText;
+            headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Create table body
+        const tbody = document.createElement('tbody');
+
+        // Get current username for comparison
+        const currentUsername = getUsername();
+
+        forecasts.forEach(forecast => {
+            const row = document.createElement('tr');
+
+            // Add cells for each property
+            const cells = [
+                forecast.location.region,
+                forecast.location.country,
+                forecast.condition.condition,
+                forecast.condition.temperature + '°C',
+                forecast.condition.humidity + '%',
+                forecast.condition.wind_speed + ' km/h',
+                forecast.condition.air_quality,
+                new Date(forecast.date).toLocaleString(),
+                forecast.weather_alert ? 'Yes' : 'No',
+                forecast.creator
+            ];
+
+            cells.forEach(cellText => {
+                const td = document.createElement('td');
+                td.textContent = cellText;
+                row.appendChild(td);
+            });
+
+            // Add action cell with delete button and toggle alert button (only for forecasts created by current user)
+            const actionCell = document.createElement('td');
+            if (forecast.creator === currentUsername) {
+                // Create delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete-btn';
+                deleteButton.dataset.forecastId = forecast.id;
+                deleteButton.addEventListener('click', function () {
+                    deleteForecast(forecast.id);
+                });
+                actionCell.appendChild(deleteButton);
+
+                // Create toggle alert button
+                const toggleAlertButton = document.createElement('button');
+                toggleAlertButton.textContent = forecast.weather_alert ? 'Disable Alert' : 'Enable Alert';
+                toggleAlertButton.className = forecast.weather_alert ? 'alert-btn-on' : 'alert-btn-off';
+                toggleAlertButton.dataset.forecastId = forecast.id;
+                toggleAlertButton.dataset.alertStatus = forecast.weather_alert;
+                toggleAlertButton.style.marginLeft = '0.3';
+                toggleAlertButton.addEventListener('click', function () {
+                    toggleWeatherAlert(forecast.id);
+                });
+                actionCell.appendChild(toggleAlertButton);
+            } else {
+                actionCell.textContent = '-';
+            }
+            row.appendChild(actionCell);
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+
+        // Add table to container
+        const container = document.getElementById('forecasts-table-container');
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
+    // Handle create forecast form submission
+    document.getElementById('create-forecast-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // Get form data
+        const formData = {
+            region: document.getElementById('region').value,
+            country: document.getElementById('country').value,
+            condition: document.getElementById('condition').value,
+            temperature: document.getElementById('temperature').value,
+            humidity: document.getElementById('humidity').value,
+            wind_speed: document.getElementById('wind_speed').value,
+            air_quality: document.getElementById('air_quality').value,
+            weather_alert: document.getElementById('weather_alert').checked
+        };
+
+        // Send API request
+        const token = getToken();
+        const options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        };
+
+        if (token) {
+            options.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        fetch('/api/weather_forecast/forecasts/create/', options)
+            .then(response => {
+                // Handle unauthorized responses (expired token)
+                if (response.status === 401) {
+                    logout();
+                    throw new Error('Session expired. Please login again.');
+                }
+                
+                // Update anonymous request limit if applicable
+                if (!isAuthenticated()) {
+                    const anonymousRequestsRemaining = response.headers.get('X-Anonymous-Requests-Remaining');
+                    if (anonymousRequestsRemaining !== null) {
+                        const anonymousRequestLimitInfo = document.getElementById('anonymous-request-limit-info');
+                        const anonymousRequestsCount = document.getElementById('anonymous-requests-count');
+                        anonymousRequestLimitInfo.style.display = 'block';
+                        anonymousRequestsCount.textContent = `Forecast creations remaining: ${anonymousRequestsRemaining}/10`;
+                        if (parseInt(anonymousRequestsRemaining) <= 0) {
+                            document.getElementById('create-forecast-form').innerHTML = `
+                                <div class="alert alert-warning">
+                                    <p><strong>Daily limit reached!</strong> As an anonymous user, you have used all your 10 daily forecast creations.</p>
+                                    <p>Please <a href="/register/">register</a> or try again tomorrow.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw new Error(JSON.stringify(data));
+                    }
+                    return data;
+                });
+            })
+            .then(data => {
+                // Show success message
+                showMessage('Forecast created successfully!', false);
+
+                // Reset form
+                document.getElementById('create-forecast-form').reset();
+
+                // Reload forecasts
+                loadForecasts();
+            })
+            .catch(error => {
+                try {
+                    const errorData = JSON.parse(error.message);
+                    let errorMessage = 'Failed to create forecast: ';
+
+                    // Format error messages
+                    for (const key in errorData) {
+                        if (Array.isArray(errorData[key])) {
+                            errorMessage += `${key}: ${errorData[key].join(', ')}. `;
+                        } else {
+                            errorMessage += `${key}: ${errorData[key]}. `;
+                        }
+                    }
+
+                    showMessage(errorMessage, true);
+                } catch (e) {
+                    showMessage('Failed to create forecast. Please try again.', true);
+                }
+                console.error('Error:', error);
+            });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Query History - Weather Forecast App{% endblock %}
+
+{% block content %}
+<div style="max-width: 50rem; margin: 0 auto;">
+    <h2>Your Query History</h2>
+    <div id="premium-check" style="margin-bottom: 1rem;">
+        <p>Checking premium status...</p>
+    </div>
+    
+    <div id="history-container">
+        <p>Loading query history...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const premiumCheck = document.getElementById('premium-check');
+        const historyContainer = document.getElementById('history-container');
+        
+        if (!isAuthenticated()) {
+            premiumCheck.innerHTML = '<p>Please <a href="/login/">login</a> to view your query history.</p>';
+            historyContainer.innerHTML = '';
+            return;
+        }
+        
+        // Check if user is premium
+        apiRequest('/api/auth/profile/')
+            .then(data => {
+                if (data.is_premium) {
+                    premiumCheck.innerHTML = '<p>Premium account: You have access to your query history.</p>';
+                    loadQueryHistory();
+                } else {
+                    premiumCheck.innerHTML = `
+                        <div class="alert alert-warning">
+                            <p>This feature is only available for premium users.</p>
+                            <p>Please <a href="/profile/">upgrade your account</a> to access your query history.</p>
+                        </div>
+                    `;
+                    historyContainer.innerHTML = '';
+                }
+            })
+            .catch(error => {
+                showMessage('Error checking premium status: ' + error.message, true);
+                console.error('Error:', error);
+            });
+    });
+    
+    function loadQueryHistory() {
+        apiRequest('/api/auth/query-history/')
+            .then(data => {
+                const historyContainer = document.getElementById('history-container');
+                
+                if (data.length === 0) {
+                    historyContainer.innerHTML = '<p>You have no query history yet. Make some forecast requests to see them here.</p>';
+                    return;
+                }
+                
+                let tableHtml = `
+                    <table class="forecast-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Region</th>
+                                <th>Country</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.forEach(query => {
+                    tableHtml += `
+                        <tr>
+                            <td>${new Date(query.date).toLocaleString()}</td>
+                            <td>${query.region}</td>
+                            <td>${query.country}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHtml += `
+                        </tbody>
+                    </table>
+                `;
+                
+                historyContainer.innerHTML = tableHtml;
+            })
+            .catch(error => {
+                showMessage('Error loading query history: ' + error.message, true);
+                console.error('Error:', error);
+            });
+    }
+</script>
+{% endblock %}
