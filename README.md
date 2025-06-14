@@ -127,10 +127,10 @@ http http://127.0.0.1:8000/api/auth/profile/ "Authorization: Bearer YOUR_AUTH_TO
 This will display your profile settings like this:
 ```JSON
 {
-    "daily_request_count": your_number_of_requests,
+    "daily_request_count": "your_number_of_requests",
     "email": "your_email",
-    "is_premium": your_status,
-    "last_request_date": your_last_request_date,
+    "is_premium": "your_status",
+    "last_request_date": "your_last_request_date",
     "username": "your_username"
 }
 ```
@@ -153,12 +153,12 @@ This will display your query history only if you are a premium user, an example 
     {
         "country": "your_country",
         "date": "your_date_time",
-        "id": forecast_id,
+        "id": "forecast_id",
         "region": "your_region",
         "username": "your_username"
     },
 	{
-		...
+		"...": "..."
 	}
 ]
 ```
@@ -202,8 +202,7 @@ Attribute | Type | Description
 Id | Serial (autoincrement) | Primary key of the table
 Region | CharField (string) | The region of the forecast
 Country | CharField (string) | The country of the forecast
-| | |
----
+
 #### Condition
 Attribute | Type | Description
 -- | -- | --
@@ -213,8 +212,7 @@ Temperature | Decimal | The temperature of the forecast
 Humidity | Decimal | The humidity of the forecast
 Wind Speed | Decimal | The wind speed of the forecast
 Air Quality | Decimal | The air quality of the forecast
-| | |
----
+
 #### Forecast
 Attribute | Type | Description
 -- | -- | --
@@ -224,8 +222,7 @@ Condition | Number | Foreign key references Condition.Id
 Date | date_time | The date and time of the forecast
 Weather alert | Boolean | The weather alert of the forecast
 Creator | Number | Foreign key references CustomUser.ID
-| | |
----
+
 ### Authentication tables:
 #### CustomUser:
 Only the additions from the standard django user are shown here:
@@ -234,8 +231,6 @@ Attribute | Type | Description
 is_premium | Boolean | Wether the user is premium or not
 daily_request_count | Integer | Number of daily requests made
 last_request_date | Date | The date of the last request
-| | |
----
 
 #### QueryHistory:
 Attribute | Type | Description
@@ -244,4 +239,3 @@ User | Number | Foreign key references CustomUser.ID
 Region | CharField (string) | The region of the forecast
 Country | CharField (string) | The country of the forecast
 date | DateTime | The Date and the time of the request (or forecast)
-| | |
