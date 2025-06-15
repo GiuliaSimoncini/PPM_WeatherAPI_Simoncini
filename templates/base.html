@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Weather Forecast App{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static "css/styles.css" %}">
     <style>
         body {
             font-family: 'Roboto', Arial, sans-serif;
@@ -173,7 +174,8 @@
     </div>
     
     <!-- Include utility JavaScript -->
-    <script src="/static/js/utils.js"></script>
+    <script src="{% static "js/utils.js" %}"></script>
+
     
     <!-- User authentication status script -->
     <script>
