@@ -3,6 +3,17 @@
 
 This document describes the endpoints and usage of the Weather Forecast API made by Giulia Simoncini for the exam: "Progettazione e produzione multimediale" (B003712).
 
+## Notes for local deployment
+The repo contains the settings.py used for deployment, as such it is not suggested to use it as it is. For a local deployment change the following in the `weather_api/settings.py`:
+- Create a Secret Key (or just a random string) and insert it in `SECRET_KEY = "your_new_secret_key"` (line 24).
+- `DEBUG = True` (line 27).
+
+Another small change to make to use the templates in an easier manner is, in `templates/base.html`:
+- remove `{% load static %}` (line 7)
+- replace `<link rel="stylesheet" href="{% static "css/styles.css" %}">` with `<link rel="stylesheet" href="static/css/styles.css">` (line 8).
+- replace `<script src="{% static "js/utils.js" %}"></script>` with `<script src="static/js/utils.js"></script>` (line 177).
+
+With these changes made you can run `python manage.py runserver` for a local server.
 ## Structure
 
 The API is organized around a single resource: `forecasts`. The endpoints are designed to allow users to retrieve, create, delete, and update weather forecasts.
